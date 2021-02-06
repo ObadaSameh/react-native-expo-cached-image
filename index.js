@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Image, ImageBackground, InteractionManager } from 'react-native';
+import { Image, ImageBackground, InteractionManager, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
 
@@ -7,9 +7,11 @@ export default class CachedImage extends Component {
   mounted = true;
   state = {
     imgURI: '',
+    platformOS : Platform.OS
   };
 
   async componentDidMount() {
+    if (this.state.platformOS == 'web') return
     this._interaction = InteractionManager.runAfterInteractions(async () => {
       if (this.props.source.uri) {
         const filesystemURI = await this.getImageFilesystemKey(this.props.source.uri);
@@ -19,6 +21,7 @@ export default class CachedImage extends Component {
   }
 
   async componentDidUpdate() {
+    if (this.state.platformOS == 'web') return
     if (this.props.source.uri) {
       const filesystemURI = await this.getImageFilesystemKey(this.props.source.uri);
       if (this.props.source.uri === this.state.imgURI || filesystemURI === this.state.imgURI) {
@@ -29,12 +32,14 @@ export default class CachedImage extends Component {
   }
 
   async componentWillUnmount() {
+    if (this.state.platformOS == 'web') return
     this._interaction && this._interaction.cancel();
     this.mounted = false;
     await this.checkClear();
   }
 
   async checkClear() {
+    if (this.state.platformOS == 'web') return
     try {
       if (this.downloadResumable) {
         const t = await this.downloadResumable.pauseAsync();
@@ -50,11 +55,13 @@ export default class CachedImage extends Component {
   }
 
   async getImageFilesystemKey(remoteURI) {
+    if (this.state.platformOS == 'web') return
     const hashed = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, remoteURI);
     return `${FileSystem.documentDirectory}${hashed}`;
   }
 
   async loadImage(filesystemURI, remoteURI) {
+    if (this.state.platformOS == 'web') return
     if (this.downloadResumable && this.downloadResumable._removeSubscription) {
       this.downloadResumable._removeSubscription();
     }
@@ -97,6 +104,7 @@ export default class CachedImage extends Component {
   }
 
   onDownloadUpdate(downloadProgress) {
+    if (this.state.platformOS == 'web') return
     if (downloadProgress.totalBytesWritten >= downloadProgress.totalBytesExpectedToWrite) {
       if (this.downloadResumable && this.downloadResumable._removeSubscription) {
         this.downloadResumable._removeSubscription();
